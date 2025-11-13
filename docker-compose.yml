@@ -1,0 +1,39 @@
+services:
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+ 
+  backend:
+    build: ./backend
+    container_name: backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/myappdb
+    volumes:
+      - ./backend:/app:delegated
+      - /app/node_modules
+    
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app:delegated
+      - /app/node_modules
+    stdin_open: true
+    tty: true
+
+
+volumes:
+  mongo-data:

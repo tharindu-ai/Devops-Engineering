@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* small helper: center body content when not using container */
+html, body, #root { height: 100%; }
+body { @apply bg-gray-50; }
