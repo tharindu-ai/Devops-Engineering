@@ -1,0 +1,39 @@
+# Terraform files
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+*.tfstate
+*.tfstate.*
+
+# Private keys (NEVER commit to git)
+*.pem
+*.key
+event-registration-key.pem
+
+# Local files
+.DS_Store
+*.swp
+*.swo
+*~
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Variables
+terraform.tfvars
+!terraform.tfvars.example
+
+# Temporary files
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Backup files
+*.backup
+*.bak
