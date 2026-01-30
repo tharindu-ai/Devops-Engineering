@@ -1,0 +1,183 @@
+---
+- name: Deploy Event Registration application
+  hosts: webservers
+  become: yes
+  gather_facts: yes
+
+  vars:
+    backend_image: "{{ backend_image | default('your-username/event-reg-backend:latest') }}"
+    frontend_image: "{{ frontend_image | default('your-username/event-reg-frontend:latest') }}"
+    app_home: /home/ubuntu/app
+    docker_network: event-app-network
+
+  tasks:
+    - name: Create Docker network
+      docker_network:
+        name: "{{ docker_network }}"
+        state: present
+      become_user: ubuntu
+
+    - name: Pull Backend image
+      docker_image:
+        name: "{{ backend_image }}"
+        source: pull
+      become_user: ubuntu
+
+    - name: Pull Frontend image
+      docker_image:
+        name: "{{ frontend_image }}"
+        source: pull
+      become_user: ubuntu
+
+    - name: Stop existing containers
+      docker_container:
+        name: "{{ item }}"
+        state: stopped
+        force_kill: yes
+      loop:
+        - event-backend
+        - event-frontend
+      ignore_errors: yes
+      become_user: ubuntu
+
+    - name: Remove existing containers
+      docker_container:
+        name: "{{ item }}"
+        state: absent
+      loop:
+        - event-backend
+        - event-frontend
+      ignore_errors: yes
+      become_user: ubuntu
+
+    - name: Create backend container
+      docker_container:
+        name: event-backend
+        image: "{{ backend_image }}"
+        state: started
+        restart_policy: always
+        networks:
+          - name: "{{ docker_network }}"
+        ports:
+          - "5000:5000"
+        env:
+          PORT: "5000"
+          MONGO_URI: "{{ lookup('env', 'MONGO_URI') | default('mongodb://mongo:27017/event-db') }}"
+          NODE_ENV: production
+        volumes:
+          - /var/log/event-backend:/app/logs
+        healthcheck:
+          test: ["CMD", "curl", "-f", "http://localhost:5000/api/auth || exit 1"]
+          interval: 30s
+          timeout: 10s
+          retries: 3
+          start_period: 40s
+      become_user: ubuntu
+      register: backend_container
+
+    - name: Create frontend container
+      docker_container:
+        name: event-frontend
+        image: "{{ frontend_image }}"
+        state: started
+        restart_policy: always
+        networks:
+          - name: "{{ docker_network }}"
+        ports:
+          - "5173:5173"
+          - "80:80"
+        env:
+          VITE_API_URL: "http://{{ ansible_default_ipv4.address }}:5000"
+          NODE_ENV: production
+        volumes:
+          - /var/log/event-frontend:/app/logs
+        healthcheck:
+          test: ["CMD", "curl", "-f", "http://localhost:5173 || exit 1"]
+          interval: 30s
+          timeout: 10s
+          retries: 3
+          start_period: 40s
+      become_user: ubuntu
+      register: frontend_container
+
+    - name: Wait for services to be healthy
+      pause:
+        seconds: 15
+
+    - name: Verify backend is running
+      uri:
+        url: "http://localhost:5000/api/auth"
+        method: GET
+        status_code: [200, 404, 405]
+        timeout: 10
+      retries: 5
+      delay: 10
+      register: backend_status
+
+    - name: Verify frontend is running
+      uri:
+        url: "http://localhost:5173"
+        method: GET
+        status_code: [200, 304]
+        timeout: 10
+      retries: 5
+      delay: 10
+      register: frontend_status
+
+    - name: Display deployment status
+      debug:
+        msg: |
+          ✅ Deployment completed successfully!
+          
+          Backend Container ID: {{ backend_container.container.Id[:12] }}
+          Backend Status: {{ backend_container.container.State.Status }}
+          Backend Health: {{ backend_status.status }}
+          
+          Frontend Container ID: {{ frontend_container.container.Id[:12] }}
+          Frontend Status: {{ frontend_container.container.State.Status }}
+          Frontend Health: {{ frontend_status.status }}
+
+    - name: Configure log rotation
+      copy:
+        content: |
+          /var/log/event-backend/*.log {
+            daily
+            missingok
+            rotate 7
+            compress
+            delaycompress
+            notifempty
+            create 0640 ubuntu ubuntu
+          }
+          
+          /var/log/event-frontend/*.log {
+            daily
+            missingok
+            rotate 7
+            compress
+            delaycompress
+            notifempty
+            create 0640 ubuntu ubuntu
+          }
+        dest: /etc/logrotate.d/event-app
+
+    - name: Setup cron job for health checks
+      cron:
+        name: "Check Event App Health"
+        minute: "*/5"
+        hour: "*"
+        job: "curl -f http://localhost:5000/api/auth > /dev/null 2>&1 || docker restart event-backend"
+        user: ubuntu
+
+  handlers:
+    - name: Restart backend
+      docker_container:
+        name: event-backend
+        state: restarted
+      become_user: ubuntu
+
+    - name: Restart frontend
+      docker_container:
+        name: event-frontend
+        state: restarted
+      become_user: ubuntu

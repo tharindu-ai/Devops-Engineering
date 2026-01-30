@@ -1,0 +1,8 @@
+# Example Terraform Variables File
+# Copy to terraform.tfvars and fill in your values
+
+aws_region      = "ap-south-1"
+environment     = "staging"
+instance_type   = "t3.micro"
+enable_monitoring = true
+app_name        = "event-registration"

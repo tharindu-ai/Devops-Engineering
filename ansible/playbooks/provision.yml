@@ -1,0 +1,128 @@
+---
+- name: Provision EC2 instance for Event Registration app
+  hosts: webservers
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install required system packages
+      apt:
+        name:
+          - curl
+          - wget
+          - git
+          - htop
+          - net-tools
+          - ssl-cert
+        state: present
+
+    - name: Create application directories
+      file:
+        path: "{{ app_home }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+    - name: Clone repository (if needed)
+      git:
+        repo: "https://github.com/your-username/Event-Registration-Management.git"
+        dest: "{{ app_home }}"
+        version: main
+        accept_hostkey: yes
+      become_user: ubuntu
+      ignore_errors: yes
+
+    - name: Configure Docker daemon
+      copy:
+        content: |
+          {
+            "insecure-registries": ["docker.io"],
+            "log-driver": "json-file",
+            "log-opts": {
+              "max-size": "10m",
+              "max-file": "3"
+            }
+          }
+        dest: /etc/docker/daemon.json
+      notify: Restart Docker
+
+    - name: Start and enable Docker
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Create docker-compose directory
+      file:
+        path: "{{ app_home }}/docker"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+    - name: Set up firewall rules (UFW)
+      block:
+        - name: Enable UFW
+          ufw:
+            state: enabled
+            policy: allow
+
+        - name: Allow SSH
+          ufw:
+            rule: allow
+            port: '22'
+            proto: tcp
+
+        - name: Allow HTTP
+          ufw:
+            rule: allow
+            port: '80'
+            proto: tcp
+
+        - name: Allow HTTPS
+          ufw:
+            rule: allow
+            port: '443'
+            proto: tcp
+
+        - name: Allow Backend API
+          ufw:
+            rule: allow
+            port: '5000'
+            proto: tcp
+
+        - name: Allow Frontend Dev Server
+          ufw:
+            rule: allow
+            port: '5173'
+            proto: tcp
+
+    - name: Create .env file for backend
+      file:
+        path: "{{ app_home }}/backend/.env"
+        state: touch
+        owner: ubuntu
+        group: ubuntu
+        mode: '0600'
+      when: inventory_hostname in groups['webservers']
+
+    - name: Verify Docker installation
+      shell: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Display Docker version
+      debug:
+        msg: "{{ docker_version.stdout }}"
+
+  handlers:
+    - name: Restart Docker
+      systemd:
+        name: docker
+        state: restarted

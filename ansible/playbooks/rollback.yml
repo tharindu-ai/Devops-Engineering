@@ -1,0 +1,49 @@
+---
+- name: Rollback Event Registration application
+  hosts: webservers
+  become: yes
+
+  vars:
+    app_home: /home/ubuntu/app
+
+  tasks:
+    - name: Get running containers
+      docker_container_info:
+        name: "{{ item }}"
+      loop:
+        - event-backend
+        - event-frontend
+      register: container_info
+
+    - name: Stop containers
+      docker_container:
+        name: "{{ item }}"
+        state: stopped
+      loop:
+        - event-backend
+        - event-frontend
+      ignore_errors: yes
+      become_user: ubuntu
+
+    - name: Remove containers
+      docker_container:
+        name: "{{ item }}"
+        state: absent
+      loop:
+        - event-backend
+        - event-frontend
+      ignore_errors: yes
+      become_user: ubuntu
+
+    - name: Prune unused Docker images
+      docker_prune:
+        images: yes
+        images_filters:
+          dangling: true
+      become_user: ubuntu
+
+    - name: Display rollback status
+      debug:
+        msg: |
+          ✅ Rollback completed!
+          All containers have been stopped and removed.

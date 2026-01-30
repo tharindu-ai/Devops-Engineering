@@ -1,12 +1,12 @@
-
 FROM node:22.14.0
 
-RUN npm install -g nodemon
 WORKDIR /app
 
-COPY . . 
-
+COPY package.json package-lock.json ./
 RUN npm install
+
+COPY . .
+
 EXPOSE 5000
 
 CMD ["npm", "run", "dev"]
