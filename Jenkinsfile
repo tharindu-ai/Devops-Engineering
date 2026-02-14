@@ -22,7 +22,9 @@ pipeline {
             steps {
                 script {
                     echo "Building Backend Docker image..."
-                    sh 'docker build -t tharik2000/devops-engineering:backend-v2 -f ./backend/Dockerfile ./backend'
+                    retry(3) {
+                        sh 'docker build -t tharik2000/devops-engineering:backend-v2 -f ./backend/Dockerfile ./backend'
+                    }
                 }
             }
         }
@@ -31,7 +33,9 @@ pipeline {
             steps {
                 script {
                     echo "Building Frontend Docker image..."
-                    sh 'docker build -t tharik2000/devops-engineering:frontend-v2 -f ./frontend/Dockerfile ./frontend'
+                    retry(3) {
+                        sh 'docker build -t tharik2000/devops-engineering:frontend-v2 -f ./frontend/Dockerfile ./frontend'
+                    }
                 }
             }
         }
