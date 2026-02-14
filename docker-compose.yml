@@ -17,7 +17,9 @@ services:
       - event-network
 
   backend:
-    image: tharik2000/devops-engineering:backend-v2
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: event-backend
     restart: unless-stopped
     depends_on:
@@ -26,17 +28,23 @@ services:
       - "5000:5000"
     environment:
       MONGO_URI: mongodb://admin:password@mongodb:27017/event-db?authSource=admin
+      JWT_SECRET: your_jwt_secret_key_change_in_production
+      PORT: 5000
     networks:
       - event-network
 
   frontend:
-    image: tharik2000/devops-engineering:frontend-v2
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: event-frontend
     restart: unless-stopped
     depends_on:
       - backend
     ports:
       - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:5000/api
     networks:
       - event-network
 
