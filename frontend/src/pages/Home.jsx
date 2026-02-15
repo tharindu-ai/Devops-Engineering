@@ -47,7 +47,7 @@ const Home = () => {
             {/* Left Content */}
             <div className="text-white animate-slideUp">
               <h1 className="text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                Event Registration & Management
+                Registration & Management
               </h1>
               <p className="text-xl lg:text-2xl text-primary-100 mb-8 leading-relaxed">
                 Manage events, registrations, and attendees effortlessly. Create amazing experiences for your audience.
