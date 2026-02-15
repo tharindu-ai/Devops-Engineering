@@ -170,6 +170,10 @@ MONGO_URI=mongodb://admin:password@mongodb:27017/event-db?authSource=admin
 JWT_SECRET=your_very_secure_jwt_secret_key_change_in_production
 FRONTEND_URL=http://${SERVER_IP}
 EOF
+
+                                cat > frontend/.env << EOF
+VITE_API_URL=http://${SERVER_IP}:5000/api
+EOF
                                 
                                 echo "Updating docker-compose VITE_API_URL..."
                                 sed -i "s|VITE_API_URL: .*|VITE_API_URL: http://${SERVER_IP}:5000/api|g" docker-compose.yml
