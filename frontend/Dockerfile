@@ -13,4 +13,5 @@ ENV VITE_API_URL=${VITE_API_URL}
 
 EXPOSE 5173
 
-CMD ["npm", "run", "dev"]
+# Use --host flag to make the server accessible from outside the container
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
