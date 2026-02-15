@@ -136,7 +136,7 @@ pipeline {
                     
                     withCredentials([
                         sshUserPrivateKey(
-                            credentialsId: 'event-registration-key',
+                            credentialsId: 'event-registration-server',
                             keyFileVariable: 'SSH_KEY',
                             usernameVariable: 'SSH_USER'
                         )
