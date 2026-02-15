@@ -19,6 +19,7 @@ const corsOptions = {
       'http://localhost:5173',
       'http://localhost:3000',
       'http://127.0.0.1:5173',
+      'http://43.205.47.152:5173',
       process.env.FRONTEND_URL // e.g., http://43.205.47.152:5173
     ].filter(Boolean);
     
@@ -54,3 +55,4 @@ mongoose.connect(process.env.MONGO_URI, {
   console.error('❌ MongoDB connection error:', err);
   process.exit(1);
 });
+
