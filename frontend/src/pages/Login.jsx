@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { API_BASE_URL } from '../constants';
 
 /**
  * Login Page - Modern login form with gradient background
@@ -32,8 +33,7 @@ const Login = () => {
     }
 
     try {
-      // Replace with your actual API endpoint
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

@@ -12,8 +12,27 @@ const app = express();
 // Middlewares
 app.use(express.json());
 
-// Allow your frontend origin (Vite default: 5173). Change if needed.
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+// CORS Configuration - Allow both localhost and public frontend URLs
+const corsOptions = {
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://127.0.0.1:5173',
+      process.env.FRONTEND_URL // e.g., http://43.205.47.152:5173
+    ].filter(Boolean);
+    
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin || allowedOrigins.some(o => origin.includes(o) || o.includes(origin))) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 
 // Routes
 app.use('/api/auth', authRoutes);
