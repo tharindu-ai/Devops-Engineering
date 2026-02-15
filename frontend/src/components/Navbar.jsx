@@ -48,7 +48,7 @@ const Navbar = () => {
               <span className="text-white font-bold text-lg">E</span>
             </div>
             <span className="hidden sm:block text-xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
-              EventHub
+              tharindu
             </span>
           </Link>
 
