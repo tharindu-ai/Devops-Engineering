@@ -25,18 +25,18 @@ output "security_group_id" {
 
 output "key_pair_name" {
   description = "EC2 Key Pair name"
-  value       = aws_key_pair.main.key_name
+  value       = data.aws_key_pair.existing.key_name
 }
 
 output "private_key_path" {
-  description = "Path to private key file"
-  value       = local_sensitive_file.private_key.filename
+  description = "Path to private key file - stored locally in terraform-cd directory"
+  value       = "${path.module}/${var.app_name}-key.pem"
   sensitive   = true
 }
 
 output "ssh_command" {
   description = "SSH command to connect to the instance"
-  value       = "ssh -i ${local_sensitive_file.private_key.filename} ubuntu@${aws_eip.app_server.public_ip}"
+  value       = "ssh -i ${path.module}/${var.app_name}-key.pem ubuntu@${aws_eip.app_server.public_ip}"
 }
 
 output "api_endpoint" {
@@ -51,5 +51,5 @@ output "frontend_endpoint" {
 
 output "cloudwatch_log_group" {
   description = "CloudWatch log group name"
-  value       = aws_cloudwatch_log_group.app_logs.name
+  value       = data.aws_cloudwatch_log_group.app_logs.name
 }

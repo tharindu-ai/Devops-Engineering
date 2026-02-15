@@ -14,28 +14,35 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# SSH Key Pair for EC2 access
-resource "tls_private_key" "main" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
+# Data source to reference existing EC2 key pair
+data "aws_key_pair" "existing" {
+  key_name = "${var.app_name}-key"
+
+  # Set filter to ensure the key exists, if not will error
+  depends_on = []
 }
 
-resource "aws_key_pair" "main" {
-  key_name   = "${var.app_name}-key"
-  public_key = tls_private_key.main.public_key_openssh
-
-  tags = {
-    Name = "${var.app_name}-key"
-  }
-}
-
-# Save private key locally
-resource "local_sensitive_file" "private_key" {
-  filename             = "${path.module}/${var.app_name}-key.pem"
-  content              = tls_private_key.main.private_key_pem
-  file_permission      = "0600"
-  directory_permission = "0700"
-}
+# Note: Key pair creation is skipped as it already exists in AWS
+# If you need to recreate key pair, delete it from AWS console first
+# resource "tls_private_key" "main" {
+#   algorithm = "RSA"
+#   rsa_bits  = 4096
+# }
+#
+# resource "aws_key_pair" "main" {
+#   key_name   = "${var.app_name}-key"
+#   public_key = tls_private_key.main.public_key_openssh
+#   tags = {
+#     Name = "${var.app_name}-key"
+#   }
+# }
+#
+# resource "local_sensitive_file" "private_key" {
+#   filename             = "${path.module}/${var.app_name}-key.pem"
+#   content              = tls_private_key.main.private_key_pem
+#   file_permission      = "0600"
+#   directory_permission = "0700"
+# }
 
 # VPC
 resource "aws_vpc" "main" {
@@ -159,7 +166,7 @@ resource "aws_instance" "app_server" {
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.app_sg.id]
-  key_name               = aws_key_pair.main.key_name
+  key_name               = data.aws_key_pair.existing.key_name
   
   # User data script to install Docker, Docker Compose, Node.js, and Ansible
   user_data = base64encode(file("${path.module}/user_data.sh"))
@@ -194,13 +201,18 @@ resource "aws_eip" "app_server" {
 }
 
 # CloudWatch Log Group for application logs
-resource "aws_cloudwatch_log_group" "app_logs" {
-  name              = "/aws/ec2/${var.app_name}-logs"
-  retention_in_days = 7
+# Note: Commented out as log group is already created
+# resource "aws_cloudwatch_log_group" "app_logs" {
+#   name              = "/aws/ec2/${var.app_name}-logs"
+#   retention_in_days = 7
+#   tags = {
+#     Name = "${var.app_name}-logs"
+#   }
+# }
 
-  tags = {
-    Name = "${var.app_name}-logs"
-  }
+# Data source to reference existing log group if needed
+data "aws_cloudwatch_log_group" "app_logs" {
+  name = "/aws/ec2/${var.app_name}-logs"
 }
 
 # CloudWatch Alarms
