@@ -199,41 +199,6 @@ EOF
                 }
             }
         }
-
-        stage('Verify Deployment') {
-            steps {
-                script {
-                    echo "🔍 Verifying deployment..."
-                    
-                    withCredentials([
-                        sshUserPrivateKey(
-                            credentialsId: 'event-registration-server',
-                            keyFileVariable: 'SSH_KEY',
-                            usernameVariable: 'SSH_USER'
-                        )
-                    ]) {
-                        sh '''
-                            chmod 600 $SSH_KEY
-                            
-                            ssh -o StrictHostKeyChecking=no \
-                                -i "$SSH_KEY" \
-                                ${SSH_USER}@${SERVER_IP} '
-                                
-                                echo "Checking running containers..."
-                                docker compose ps
-                                
-                                echo "Testing backend API..."
-                                curl -s http://localhost:5000/api/events | head -20 || echo "API check in progress..."
-                                
-                                echo -e "\n✅ Application URLs:"
-                                echo "Frontend: http://${SERVER_IP}:5173"
-                                echo "Backend API: http://${SERVER_IP}:5000/api"
-                            '
-                        '''
-                    }
-                }
-            }
-        }
     }
 
     post {
